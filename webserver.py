@@ -18,11 +18,8 @@ while True:
     print(str(incoming[1][0]) + ":" + str(incoming[1][1]) + " connected...")
 
     request = connected_sock.recv(4096).decode()
-    while not re.search('\\r\\n', request):
+    while not re.search(r'\r\n\r\n', request):
         request = connected_sock.recv(4096).decode()
 
     connected_sock.sendall(response)
     connected_sock.close()
-
-
-
