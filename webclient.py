@@ -17,8 +17,12 @@ socks = socket.socket()
 socks.connect(destination)
 socks.sendall(request.encode('ISO-8859-1'))
 
-response = socks.recv(4096).decode()
-while len(response) > 0:
+response_buff = ''
+while True:
     response = socks.recv(4096).decode()
+    if len(response) == 0:
+        break
+    response_buff += response
+print(response_buff)
 
 socks.close()
