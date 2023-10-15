@@ -19,7 +19,7 @@ if len(sys.argv) > 1:
 
 
 def parse_mime_type(f: str):
-    mime_types = {'.txt': 'text/plain', '.html': 'text/html', '': 'application/octet-stream'}
+    mime_types = {'.txt': b'text/plain', '.html': b'text/html', '.ico': b'image/x-icon', '': b'application/octet-stream'}
     return mime_types[os.path.splitext(f)[1]]
 
 
@@ -34,14 +34,17 @@ def read_file(fn: str):
 
 
 socks = socket.socket()
+socks.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 socks.bind(('', port))
 socks.listen()
 
 while True:
     incoming = socks.accept()
     connected_sock = incoming[0]
-    print(str(incoming[1][0]) + ":" + str(incoming[1][1]) + " connected...")
 
+    # print(str(incoming[1][0]) + ":" + str(incoming[1][1]) + " connected...")
+
+    response = b''
     request_buff = ''
     while True:
         request = connected_sock.recv(4096).decode()
@@ -53,11 +56,25 @@ while True:
 
     mime_type = parse_mime_type(file_name)
 
-    print("file name: " + file_name + ', mime type: ' + mime_type)
+    # print("file name: " + file_name + ', mime type: ' + str(mime_type.decode()))
 
     payload = read_file(file_name)
 
-    response = b'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 6\r\nConnection: close\r\n\r\nHello!\r\n'
+    if payload:
+        response = b'HTTP/1.1 200 OK\r\n'
+
+        # content type
+        response += b'Content-Type: ' + mime_type + b'\r\n'
+
+        # content length
+        response += b'Content-Length: ' + str(len(payload)).encode() + b'\r\n'
+
+        # connection close
+        response += b'Connection: close\r\n\r\n'
+
+        # payload
+        response += payload.encode() + b'\r\n'
+
     if not payload:
         response = b"HTTP/1.1 404 Not Found\r\n" \
                    b"Content-Type: text/plain\r\n" \
